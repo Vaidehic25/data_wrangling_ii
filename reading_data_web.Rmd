@@ -1,0 +1,164 @@
+---
+title: "reading data from web"
+output: github_document
+date: "2025-10-09"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+
+```{r}
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+
+Import NSDUH data from web
+
+```{r}
+url = "https://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+drug_use_html = read_html(url)
+```
+
+
+This is an easy case
+
+```{r}
+drug_use_html |> 
+  html_table()
+
+  # takes out everything that is labeled a table
+  # we are given 15 tables
+
+drug_use_html |> 
+  html_table() |> 
+  nth(1)
+  # if you only want first or 7th you can specify
+```
+
+remove first row
+
+```{r}
+drug_use_html |> 
+  html_table() |> 
+  nth(1) |> 
+  slice(-1) # remove first row bc extra info in that row
+```
+
+
+but above not tidy dataset, each of the columns encoded as character bc there is a, 12+ is age next to year
+
+slightly harder case
+
+```{r}
+url = "https://www.imdb.com/list/ls070150896/"
+
+sw_html = 
+  read_html(url)
+
+```
+
+but how to get specific info we want? ahve to pull out elements fo html that i care about
+
+```{r}
+title_vec=
+  sw_html |> 
+  html_elements(".ipc-title-link-wrapper .ipc-title__text--reduced") |> 
+  html_text() #this formats it to table
+
+metascore_vec = 
+  sw_html |> 
+  html_elements(".metacritic-score-box") |> 
+  html_text()
+
+
+runtime_vec = 
+  sw_html |> 
+  html_elements(".dli-title-metadata-item:nth-child(2)") |> 
+  html_text()
+
+sw_df =
+  tibble(
+    title = title_vec,
+    metascore = metascore_vec,
+    runtime = runtime_vec
+  )
+
+```
+
+remember everythign you click knit it will import the data everytime from internet so it will be clunk. better to just save the data
+
+
+## API
+
+get data using API
+
+Get the NYC water consumption dataset
+
+```{r}
+nyc_Water_df = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") |> 
+  content("parsed") # this oragnizes as table
+
+nyc_Water_df |> 
+  ggplot(aes(x=year, y = nyc_consumption_million_gallons_per_day)) +
+  geom_point()
+```
+
+access BRFSS doesnt woks the same way as above. you need an app token by creating account
+
+```{r, eval = FALSE}
+brfss_df = 
+  GET(
+    "url",
+    query = list("apptoken"))
+ 
+```
+
+Look at pokemon data. would have to do a lot of work to organize the pokemon data
+looking at first one
+
+```{r}
+poke = 
+  GET("http://pokeapi.co/api/v2/pokemon/1") |>
+  content()
+
+poke[[1]]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
